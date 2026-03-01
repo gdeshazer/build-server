@@ -78,6 +78,19 @@ func TestLoad(t *testing.T) {
 				if r.MakeTarget != "deploy" {
 					t.Errorf("make_target = %q, want deploy", r.MakeTarget)
 				}
+				if r.BuildTimeout != 60 {
+					t.Errorf("build_timeout = %d, want 60", r.BuildTimeout)
+				}
+			},
+		},
+		{
+			name: "explicit build_timeout",
+			yaml: "repositories:\n  - name: repo1\n    path: /tmp/r1\n    build_timeout: 120\n",
+			check: func(t *testing.T, c *config.Config) {
+				r := c.Repositories[0]
+				if r.BuildTimeout != 120 {
+					t.Errorf("build_timeout = %d, want 120", r.BuildTimeout)
+				}
 			},
 		},
 		{

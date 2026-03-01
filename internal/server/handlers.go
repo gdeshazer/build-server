@@ -5,6 +5,7 @@ import (
 	"net/http"
 	"strconv"
 	"sync"
+	"time"
 
 	buildsvc "github.com/grantdeshazer/build-server/internal/build"
 	dbpkg "github.com/grantdeshazer/build-server/internal/db"
@@ -185,7 +186,8 @@ func (s *Server) handleBuild(w http.ResponseWriter, r *http.Request) {
 		return
 	}
 
-	go buildsvc.Run(s.db, buildID, repo.LocalPath, makeTarget)
+	timeout := time.Duration(s.repoBuildTimeout(name)) * time.Second
+	go buildsvc.Run(s.db, buildID, repo.LocalPath, makeTarget, timeout)
 
 	build, _ := dbpkg.GetBuildRun(s.db, buildID)
 	renderPartial(w, "build_log.html", map[string]any{

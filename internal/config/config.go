@@ -25,6 +25,7 @@ type RepoConfig struct {
 	Remote        string `yaml:"remote"`
 	DefaultBranch string `yaml:"default_branch"`
 	MakeTarget    string `yaml:"make_target"`
+	BuildTimeout  int    `yaml:"build_timeout"` // seconds; default 60
 }
 
 func Load(path string) (*Config, error) {
@@ -68,6 +69,9 @@ func setDefaults(cfg *Config) {
 		}
 		if r.MakeTarget == "" {
 			r.MakeTarget = "deploy"
+		}
+		if r.BuildTimeout == 0 {
+			cfg.Repositories[i].BuildTimeout = 60
 		}
 	}
 }

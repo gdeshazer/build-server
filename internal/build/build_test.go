@@ -3,7 +3,9 @@ package build_test
 import (
 	"os"
 	"path/filepath"
+	"strings"
 	"testing"
+	"time"
 
 	"github.com/grantdeshazer/build-server/internal/build"
 	"github.com/grantdeshazer/build-server/internal/db"
@@ -33,7 +35,7 @@ func TestRun_Success(t *testing.T) {
 		t.Fatal(err)
 	}
 
-	build.Run(database, buildID, dir, "deploy")
+	build.Run(database, buildID, dir, "deploy", 30*time.Second)
 
 	b, err := db.GetBuildRun(database, buildID)
 	if err != nil {
@@ -57,7 +59,7 @@ func TestRun_Failure(t *testing.T) {
 	database.QueryRow("SELECT id FROM repositories WHERE name='r'").Scan(&repoID)
 
 	buildID, _ := db.InsertBuildRun(database, repoID, "main", "abc", "deploy")
-	build.Run(database, buildID, dir, "deploy")
+	build.Run(database, buildID, dir, "deploy", 30*time.Second)
 
 	b, _ := db.GetBuildRun(database, buildID)
 	if b.Status != "failed" {
@@ -77,7 +79,7 @@ func TestRun_MissingMakefile(t *testing.T) {
 	database.QueryRow("SELECT id FROM repositories WHERE name='r'").Scan(&repoID)
 
 	buildID, _ := db.InsertBuildRun(database, repoID, "main", "abc", "deploy")
-	build.Run(database, buildID, dir, "deploy")
+	build.Run(database, buildID, dir, "deploy", 30*time.Second)
 
 	b, _ := db.GetBuildRun(database, buildID)
 	if b.Status != "failed" {
@@ -104,7 +106,7 @@ func TestRun_Lifecycle(t *testing.T) {
 		t.Fatalf("before Run: status = %q, want pending", b.Status)
 	}
 
-	build.Run(database, buildID, dir, "deploy")
+	build.Run(database, buildID, dir, "deploy", 30*time.Second)
 
 	b, _ = db.GetBuildRun(database, buildID)
 	if b.Status != "success" {
@@ -115,5 +117,26 @@ func TestRun_Lifecycle(t *testing.T) {
 	}
 	if b.FinishedAt == nil {
 		t.Error("finished_at should be set")
+	}
+}
+
+func TestRun_Timeout(t *testing.T) {
+	database := testutil.OpenTestDB(t)
+	dir := t.TempDir()
+	makeMakefile(t, dir, "deploy", "sleep 10")
+
+	database.Exec(`INSERT INTO repositories (name, local_path, active) VALUES ('r', ?, 1)`, dir)
+	var repoID int64
+	database.QueryRow("SELECT id FROM repositories WHERE name='r'").Scan(&repoID)
+
+	buildID, _ := db.InsertBuildRun(database, repoID, "main", "abc", "deploy")
+	build.Run(database, buildID, dir, "deploy", 1*time.Second)
+
+	b, _ := db.GetBuildRun(database, buildID)
+	if b.Status != "failed" {
+		t.Errorf("status = %q, want failed", b.Status)
+	}
+	if !strings.Contains(b.LogOutput, "timed out") {
+		t.Errorf("log_output %q does not contain 'timed out'", b.LogOutput)
 	}
 }

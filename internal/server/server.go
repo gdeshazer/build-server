@@ -104,6 +104,15 @@ func (s *Server) repoMakeTarget(name string) string {
 	return "deploy"
 }
 
+func (s *Server) repoBuildTimeout(name string) int {
+	for _, r := range s.cfg.Repositories {
+		if r.Name == name {
+			return r.BuildTimeout
+		}
+	}
+	return 60
+}
+
 func (s *Server) repoRemote(name string) string {
 	for _, r := range s.cfg.Repositories {
 		if r.Name == name {
