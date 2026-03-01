@@ -1,0 +1,11 @@
+server:
+  port: 8800
+  db_path: "./build-server.db"
+  refresh_concurrency: 4
+
+repositories:
+  - name: example-repo
+    path: /path/to/example-repo
+    remote: origin
+    default_branch: main
+    make_target: deploy
