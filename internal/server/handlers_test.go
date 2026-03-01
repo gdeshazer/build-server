@@ -50,6 +50,7 @@ func TestMain(m *testing.M) {
 // mockGitOps is a test double for GitOps.
 type mockGitOps struct {
 	fetchErr    error
+	pullErr     error
 	localHash   string
 	remoteHash  string
 	branches    []string
@@ -57,6 +58,7 @@ type mockGitOps struct {
 }
 
 func (m *mockGitOps) Fetch(path, remote string) error { return m.fetchErr }
+func (m *mockGitOps) Pull(path, remote, branch string) error  { return m.pullErr }
 func (m *mockGitOps) LocalCommitHash(path, branch string) (string, error) {
 	return m.localHash, nil
 }
@@ -230,6 +232,56 @@ func TestHandleRefreshAll(t *testing.T) {
 		// handler returns 200 even when individual repos fail
 		if w.Code != http.StatusOK {
 			t.Errorf("status = %d, want 200", w.Code)
+		}
+	})
+}
+
+// TestHandlePull tests POST /repos/{name}/pull.
+func TestHandlePull(t *testing.T) {
+	repos := []config.RepoConfig{
+		{Name: "myrepo", Path: "/tmp/m", DefaultBranch: "main", Remote: "origin"},
+	}
+
+	t.Run("unknown repo returns 404", func(t *testing.T) {
+		env := newTestEnv(t, repos, &mockGitOps{})
+		w := env.serve("POST", "/repos/unknown/pull", nil)
+		if w.Code != http.StatusNotFound {
+			t.Errorf("status = %d, want 404", w.Code)
+		}
+	})
+
+	t.Run("pull error returns 500", func(t *testing.T) {
+		env := newTestEnv(t, repos, &mockGitOps{pullErr: fmt.Errorf("merge conflict")})
+		w := env.serve("POST", "/repos/myrepo/pull", nil)
+		if w.Code != http.StatusInternalServerError {
+			t.Errorf("status = %d, want 500", w.Code)
+		}
+		if !strings.Contains(w.Body.String(), "pull failed") {
+			t.Errorf("body should mention pull failed, got: %s", w.Body.String())
+		}
+	})
+
+	t.Run("success updates DB and returns repo_row", func(t *testing.T) {
+		localHash := "aaa111bbb222ccc333ddd444eee555fff666aaa1"
+		remoteHash := "aaa111bbb222ccc333ddd444eee555fff666aaa1"
+		mock := &mockGitOps{localHash: localHash, remoteHash: remoteHash}
+		env := newTestEnv(t, repos, mock)
+		w := env.serve("POST", "/repos/myrepo/pull", nil)
+		if w.Code != http.StatusOK {
+			t.Errorf("status = %d, want 200; body: %s", w.Code, w.Body.String())
+		}
+		if !strings.Contains(w.Body.String(), "myrepo") {
+			t.Errorf("body should contain 'myrepo', got:\n%s", w.Body.String())
+		}
+		r, err := dbpkg.GetRepo(env.db, "myrepo")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if r.LocalCommit != localHash {
+			t.Errorf("local_commit = %q, want %q", r.LocalCommit, localHash)
+		}
+		if r.RemoteCommit != remoteHash {
+			t.Errorf("remote_commit = %q, want %q", r.RemoteCommit, remoteHash)
 		}
 	})
 }

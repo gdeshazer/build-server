@@ -59,6 +59,14 @@
       class="btn btn-sm">
       Fetch
     </button>
+    <button
+      hx-post="./repos/{{$repo.Name}}/pull"
+      hx-target="#repo-{{$repo.Name}}"
+      hx-swap="outerHTML"
+      hx-indicator="#indicator-{{$repo.Name}}"
+      class="btn btn-sm">
+      Pull
+    </button>
     <span id="indicator-{{$repo.Name}}" class="htmx-indicator">...</span>
     <button
       hx-post="./repos/{{$repo.Name}}/build"

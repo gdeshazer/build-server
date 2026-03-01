@@ -15,6 +15,7 @@ import (
 // GitOps abstracts git operations so handlers can be tested without real repos.
 type GitOps interface {
 	Fetch(path, remote string) error
+	Pull(path, remote, branch string) error
 	LocalCommitHash(path, branch string) (string, error)
 	RemoteCommitHash(path, remote, branch string) (string, error)
 	ListLocalBranches(path string) ([]string, error)
@@ -23,6 +24,7 @@ type GitOps interface {
 type realGitOps struct{}
 
 func (realGitOps) Fetch(path, remote string) error { return git.Fetch(path, remote) }
+func (realGitOps) Pull(path, remote, branch string) error { return git.Pull(path, remote, branch) }
 func (realGitOps) LocalCommitHash(path, branch string) (string, error) {
 	return git.LocalCommitHash(path, branch)
 }
@@ -67,6 +69,7 @@ func (s *Server) registerRoutes() {
 	s.mux.HandleFunc("POST "+bp+"/repos/{name}/refresh", s.handleRefresh)
 	s.mux.HandleFunc("POST "+bp+"/repos/{name}/build", s.handleBuild)
 	s.mux.HandleFunc("GET "+bp+"/repos/{name}/build/{id}", s.handleBuildStatus)
+	s.mux.HandleFunc("POST "+bp+"/repos/{name}/pull", s.handlePull)
 	s.mux.HandleFunc("POST "+bp+"/repos/{name}/branch", s.handleBranch)
 	s.mux.Handle("GET "+bp+"/static/", http.StripPrefix(bp+"/static/", http.FileServer(http.FS(s.staticFS))))
 }

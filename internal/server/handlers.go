@@ -117,6 +117,49 @@ func (s *Server) handleRefreshAll(w http.ResponseWriter, r *http.Request) {
 	renderPartial(w, "repo_list.html", map[string]any{"Repos": repos, "BasePath": s.basePath})
 }
 
+func (s *Server) handlePull(w http.ResponseWriter, r *http.Request) {
+	name := r.PathValue("name")
+	repo, err := dbpkg.GetRepo(s.db, name)
+	if err != nil {
+		http.Error(w, err.Error(), http.StatusNotFound)
+		return
+	}
+
+	remote := s.repoRemote(name)
+	if err := s.gitOps.Pull(repo.LocalPath, remote, repo.ActiveBranch); err != nil {
+		http.Error(w, fmt.Sprintf("pull failed: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	local, err := s.gitOps.LocalCommitHash(repo.LocalPath, repo.ActiveBranch)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("local hash: %v", err), http.StatusInternalServerError)
+		return
+	}
+	remoteHash, err := s.gitOps.RemoteCommitHash(repo.LocalPath, remote, repo.ActiveBranch)
+	if err != nil {
+		http.Error(w, fmt.Sprintf("remote hash: %v", err), http.StatusInternalServerError)
+		return
+	}
+
+	if err := dbpkg.UpdateRepoCommits(s.db, name, local, remoteHash); err != nil {
+		http.Error(w, "db error", http.StatusInternalServerError)
+		return
+	}
+
+	repo, _ = dbpkg.GetRepo(s.db, name)
+	repo.MakeTarget = s.repoMakeTarget(name)
+	latest, _ := dbpkg.GetLatestBuildRun(s.db, repo.ID)
+	repo.LatestBuild = latest
+
+	branches, _ := s.gitOps.ListLocalBranches(repo.LocalPath)
+	renderPartial(w, "repo_row.html", map[string]any{
+		"Repo":     repo,
+		"Branches": branches,
+		"BasePath": s.basePath,
+	})
+}
+
 func (s *Server) handleBuild(w http.ResponseWriter, r *http.Request) {
 	name := r.PathValue("name")
 	repo, err := dbpkg.GetRepo(s.db, name)

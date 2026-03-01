@@ -40,6 +40,18 @@ func revParse(repoPath, ref string) (string, error) {
 	return strings.TrimSpace(string(out)), nil
 }
 
+func Pull(repoPath, remote, branch string) error {
+	ctx, cancel := context.WithTimeout(context.Background(), fetchTimeout)
+	defer cancel()
+
+	cmd := exec.CommandContext(ctx, "git", "-C", repoPath, "pull", remote, branch)
+	out, err := cmd.CombinedOutput()
+	if err != nil {
+		return fmt.Errorf("git pull: %w\n%s", err, out)
+	}
+	return nil
+}
+
 func ListLocalBranches(repoPath string) ([]string, error) {
 	cmd := exec.Command("git", "-C", repoPath, "branch", "--format=%(refname:short)")
 	out, err := cmd.Output()

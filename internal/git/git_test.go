@@ -101,6 +101,55 @@ func TestRemoteCommitHash(t *testing.T) {
 	})
 }
 
+func TestPull(t *testing.T) {
+	t.Run("success: fast-forward pulls new commit", func(t *testing.T) {
+		localPath, remotePath := makeTestRepo(t)
+
+		// Create a second clone to push a new commit to the remote.
+		pusherPath := t.TempDir()
+		run := func(dir string, args ...string) {
+			t.Helper()
+			cmd := exec.Command("git", args...)
+			cmd.Dir = dir
+			if out, err := cmd.CombinedOutput(); err != nil {
+				t.Fatalf("git %v in %s: %v\n%s", args, dir, err, out)
+			}
+		}
+		run(pusherPath, "clone", remotePath, ".")
+		run(pusherPath, "config", "user.email", "test@example.com")
+		run(pusherPath, "config", "user.name", "Test User")
+		if err := os.WriteFile(filepath.Join(pusherPath, "NEW.md"), []byte("new"), 0644); err != nil {
+			t.Fatal(err)
+		}
+		run(pusherPath, "add", ".")
+		run(pusherPath, "commit", "-m", "second commit")
+		run(pusherPath, "push", "origin", "main")
+
+		hashBefore, err := git.LocalCommitHash(localPath, "main")
+		if err != nil {
+			t.Fatal(err)
+		}
+
+		if err := git.Pull(localPath, "origin", "main"); err != nil {
+			t.Fatalf("Pull: %v", err)
+		}
+
+		hashAfter, err := git.LocalCommitHash(localPath, "main")
+		if err != nil {
+			t.Fatal(err)
+		}
+		if hashAfter == hashBefore {
+			t.Error("local commit hash unchanged after pull — expected it to advance")
+		}
+	})
+
+	t.Run("bad path errors", func(t *testing.T) {
+		if err := git.Pull("/nonexistent/path", "origin", "main"); err == nil {
+			t.Error("want error for bad path, got nil")
+		}
+	})
+}
+
 func TestListLocalBranches(t *testing.T) {
 	localPath, _ := makeTestRepo(t)
 
