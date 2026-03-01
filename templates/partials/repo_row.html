@@ -8,7 +8,7 @@
   </td>
   <td class="repo-branch">
     {{if $branches}}
-    <form hx-post="{{.BasePath}}/repos/{{$repo.Name}}/branch"
+    <form hx-post="./repos/{{$repo.Name}}/branch"
           hx-target="#repo-{{$repo.Name}}"
           hx-swap="outerHTML">
       <select name="branch" onchange="this.form.requestSubmit()">
@@ -52,7 +52,7 @@
   </td>
   <td class="actions">
     <button
-      hx-post="{{.BasePath}}/repos/{{$repo.Name}}/refresh"
+      hx-post="./repos/{{$repo.Name}}/refresh"
       hx-target="#repo-{{$repo.Name}}"
       hx-swap="outerHTML"
       hx-indicator="#indicator-{{$repo.Name}}"
@@ -61,7 +61,7 @@
     </button>
     <span id="indicator-{{$repo.Name}}" class="htmx-indicator">...</span>
     <button
-      hx-post="{{.BasePath}}/repos/{{$repo.Name}}/build"
+      hx-post="./repos/{{$repo.Name}}/build"
       hx-target="#build-{{$repo.Name}}"
       hx-swap="innerHTML"
       {{if and $repo.LatestBuild (not $repo.LatestBuild.IsTerminal)}}disabled{{end}}

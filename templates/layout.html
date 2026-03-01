@@ -4,7 +4,7 @@
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>Build Server</title>
-  <link rel="stylesheet" href="{{.BasePath}}/static/style.css">
+  <link rel="stylesheet" href="./static/style.css">
   <script src="https://unpkg.com/htmx.org@1.9.12"></script>
 </head>
 <body>
@@ -12,7 +12,7 @@
     <h1>Build Server</h1>
     <div class="header-actions">
       <button
-        hx-post="{{.BasePath}}/repos/refresh-all"
+        hx-post="./repos/refresh-all"
         hx-target="#repo-table-body"
         hx-swap="innerHTML"
         hx-indicator="#refresh-all-indicator"
