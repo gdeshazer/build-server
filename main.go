@@ -3,14 +3,13 @@ package main
 import (
 	"embed"
 	"flag"
-	"fmt"
 	"io/fs"
-	"log"
 	"net/http"
 	"strings"
 
 	"github.com/grantdeshazer/build-server/internal/config"
 	"github.com/grantdeshazer/build-server/internal/db"
+	"github.com/grantdeshazer/build-server/internal/logger"
 	"github.com/grantdeshazer/build-server/internal/server"
 )
 
@@ -18,14 +17,20 @@ import (
 var embeddedFS embed.FS
 
 func main() {
+	// Initialize logger first so all subsequent logging uses our structured logger
+	logger.Init(logger.INFO)
+	logger.Info("build-server starting up")
+
 	configPath := flag.String("config", "config.yaml", "path to config file")
 	basePath := flag.String("base-path", "", "URL path prefix when served behind a reverse proxy (e.g. /build-server)")
 	flag.Parse()
 
+	logger.Info("Loading configuration from: %s", *configPath)
 	cfg, err := config.Load(*configPath)
 	if err != nil {
-		log.Fatalf("load config: %v", err)
+		logger.Fatal("Failed to load configuration: %v", err)
 	}
+	logger.Info("Configuration loaded successfully")
 
 	// CLI flag takes precedence; fall back to config value.
 	// Normalize: strip trailing slash so "/build-server/" → "/build-server".
@@ -33,28 +38,33 @@ func main() {
 	if bp == "" {
 		bp = strings.TrimRight(cfg.Server.BasePath, "/")
 	}
+	logger.Info("Server base path: %s", bp)
 
+	logger.Info("Opening database at: %s", cfg.Server.DBPath)
 	database, err := db.Open(cfg.Server.DBPath)
 	if err != nil {
-		log.Fatalf("open db: %v", err)
+		logger.Fatal("Failed to open database: %v", err)
 	}
-
-	fmt.Printf("connected to db at: %v\n", cfg.Server.DBPath)
+	logger.Info("Database connection established")
 	defer database.Close()
 
+	logger.Info("Synchronizing repositories from configuration")
 	if err := db.SyncRepos(database, cfg.Repositories); err != nil {
-		log.Fatalf("sync repos: %v", err)
+		logger.Fatal("Failed to synchronize repositories: %v", err)
 	}
+	logger.Info("Repository synchronization completed")
 
 	var fsys fs.FS = embeddedFS
+	logger.Info("Initializing HTTP server")
 	srv, err := server.New(cfg, database, fsys, bp)
 	if err != nil {
-		log.Fatalf("init server: %v", err)
+		logger.Fatal("Failed to initialize server: %v", err)
 	}
+	logger.Info("HTTP server initialized successfully")
 
 	addr := srv.Addr()
-	fmt.Printf("build-server listening on http://localhost%s\n", addr)
+	logger.Info("build-server listening on http://localhost%s", addr)
 	if err := http.ListenAndServe(addr, srv); err != nil {
-		log.Fatalf("listen: %v", err)
+		logger.Fatal("Server failed: %v", err)
 	}
 }
