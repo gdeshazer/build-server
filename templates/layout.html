@@ -1,0 +1,29 @@
+{{define "layout"}}<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Build Server</title>
+  <link rel="stylesheet" href="/static/style.css">
+  <script src="https://unpkg.com/htmx.org@1.9.12"></script>
+</head>
+<body>
+  <header>
+    <h1>Build Server</h1>
+    <div class="header-actions">
+      <button
+        hx-post="/repos/refresh-all"
+        hx-target="#repo-table-body"
+        hx-swap="innerHTML"
+        hx-indicator="#refresh-all-indicator"
+        class="btn btn-secondary">
+        Refresh All
+      </button>
+      <span id="refresh-all-indicator" class="htmx-indicator">refreshing...</span>
+    </div>
+  </header>
+  <main>
+    {{block "content" .}}{{end}}
+  </main>
+</body>
+</html>{{end}}

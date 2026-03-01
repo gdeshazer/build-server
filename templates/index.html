@@ -1,0 +1,28 @@
+{{template "layout" .}}
+
+{{define "content"}}
+<section class="repo-section">
+  {{if not .Repos}}
+  <p class="empty-state">No repositories configured. Edit <code>config.yaml</code> to add repos.</p>
+  {{else}}
+  <table class="repo-table">
+    <thead>
+      <tr>
+        <th>Repository</th>
+        <th>Branch</th>
+        <th>Local</th>
+        <th>Remote</th>
+        <th>Status</th>
+        <th>Last Build</th>
+        <th>Actions</th>
+      </tr>
+    </thead>
+    <tbody id="repo-table-body">
+      {{range .Repos}}
+        {{template "repo_row.html" (dict "Repo" . "Branches" nil)}}
+      {{end}}
+    </tbody>
+  </table>
+  {{end}}
+</section>
+{{end}}

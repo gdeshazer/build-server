@@ -1,0 +1,73 @@
+{{define "repo_row.html"}}
+{{$repo := .Repo}}
+{{$branches := .Branches}}
+<tr id="repo-{{$repo.Name}}">
+  <td class="repo-name">
+    <strong>{{$repo.Name}}</strong>
+    <div class="repo-path">{{$repo.LocalPath}}</div>
+  </td>
+  <td class="repo-branch">
+    {{if $branches}}
+    <form hx-post="/repos/{{$repo.Name}}/branch"
+          hx-target="#repo-{{$repo.Name}}"
+          hx-swap="outerHTML">
+      <select name="branch" onchange="this.form.requestSubmit()">
+        {{range $branches}}
+        <option value="{{.}}" {{if eq . $repo.ActiveBranch}}selected{{end}}>{{.}}</option>
+        {{end}}
+      </select>
+    </form>
+    {{else}}
+    <span>{{$repo.ActiveBranch}}</span>
+    {{end}}
+  </td>
+  <td class="commit-hash">
+    {{if $repo.LocalCommit}}
+    <code title="{{$repo.LocalCommit}}">{{$repo.ShortLocal}}</code>
+    {{else}}
+    <span class="muted">—</span>
+    {{end}}
+  </td>
+  <td class="commit-hash">
+    {{if $repo.RemoteCommit}}
+    <code title="{{$repo.RemoteCommit}}">{{$repo.ShortRemote}}</code>
+    {{else}}
+    <span class="muted">—</span>
+    {{end}}
+  </td>
+  <td>
+    <span class="status status-{{$repo.CommitStatus}}">{{$repo.CommitStatus}}</span>
+  </td>
+  <td class="build-status">
+    {{if $repo.LatestBuild}}
+    <span class="status status-{{$repo.LatestBuild.Status}}">{{$repo.LatestBuild.Status}}</span>
+    {{else}}
+    <span class="muted">none</span>
+    {{end}}
+    <div id="build-{{$repo.Name}}">
+      {{if $repo.LatestBuild}}{{if not $repo.LatestBuild.IsTerminal}}
+      {{template "build_log.html" (dict "Build" $repo.LatestBuild "RepoName" $repo.Name)}}
+      {{end}}{{end}}
+    </div>
+  </td>
+  <td class="actions">
+    <button
+      hx-post="/repos/{{$repo.Name}}/refresh"
+      hx-target="#repo-{{$repo.Name}}"
+      hx-swap="outerHTML"
+      hx-indicator="#indicator-{{$repo.Name}}"
+      class="btn btn-sm">
+      Fetch
+    </button>
+    <span id="indicator-{{$repo.Name}}" class="htmx-indicator">...</span>
+    <button
+      hx-post="/repos/{{$repo.Name}}/build"
+      hx-target="#build-{{$repo.Name}}"
+      hx-swap="innerHTML"
+      {{if and $repo.LatestBuild (not $repo.LatestBuild.IsTerminal)}}disabled{{end}}
+      class="btn btn-sm btn-primary">
+      Build
+    </button>
+  </td>
+</tr>
+{{end}}

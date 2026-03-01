@@ -1,0 +1,27 @@
+{{define "build_log.html"}}
+{{$build := .Build}}
+{{$repoName := .RepoName}}
+<div id="build-log-{{$build.ID}}"
+  {{if not $build.IsTerminal}}
+  hx-get="/repos/{{$repoName}}/build/{{$build.ID}}"
+  hx-trigger="every 2s"
+  hx-target="#build-log-{{$build.ID}}"
+  hx-swap="outerHTML"
+  {{end}}
+  class="build-log">
+  <div class="build-header">
+    <span class="status status-{{$build.Status}}">{{$build.Status}}</span>
+    <span class="build-meta">
+      #{{$build.ID}} — {{$build.Branch}}
+      {{if $build.CommitHash}} @ <code>{{$build.ShortCommit}}</code>{{end}}
+      — target: <code>{{$build.MakeTarget}}</code>
+    </span>
+    {{if $build.ExitCode}}
+    <span class="exit-code">exit {{$build.ExitCode}}</span>
+    {{end}}
+  </div>
+  {{if $build.LogOutput}}
+  <pre class="build-output">{{$build.LogOutput}}</pre>
+  {{end}}
+</div>
+{{end}}
