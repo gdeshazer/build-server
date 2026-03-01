@@ -4,7 +4,9 @@ import (
 	"database/sql"
 	"fmt"
 	"io/fs"
+	"log"
 	"net/http"
+	"time"
 
 	"github.com/grantdeshazer/build-server/internal/config"
 	"github.com/grantdeshazer/build-server/internal/git"
@@ -69,8 +71,21 @@ func (s *Server) registerRoutes() {
 	s.mux.Handle("GET "+bp+"/static/", http.StripPrefix(bp+"/static/", http.FileServer(http.FS(s.staticFS))))
 }
 
+type responseWriter struct {
+	http.ResponseWriter
+	status int
+}
+
+func (rw *responseWriter) WriteHeader(code int) {
+	rw.status = code
+	rw.ResponseWriter.WriteHeader(code)
+}
+
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {
-	s.mux.ServeHTTP(w, r)
+	start := time.Now()
+	rw := &responseWriter{ResponseWriter: w, status: http.StatusOK}
+	s.mux.ServeHTTP(rw, r)
+	log.Printf("%s %s %d %s", r.Method, r.URL.Path, rw.status, time.Since(start))
 }
 
 func (s *Server) Addr() string {
