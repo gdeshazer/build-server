@@ -13,10 +13,10 @@ type Config struct {
 }
 
 type ServerConfig struct {
-	Port                int    `yaml:"port"`
-	DBPath              string `yaml:"db_path"`
-	RefreshConcurrency  int    `yaml:"refresh_concurrency"`
-	BasePath            string `yaml:"base_path"`
+	Port               int    `yaml:"port"`
+	DBPath             string `yaml:"db_path"`
+	RefreshConcurrency int    `yaml:"refresh_concurrency"`
+	BasePath           string `yaml:"base_path"`
 }
 
 type RepoConfig struct {

@@ -38,6 +38,8 @@ func main() {
 	if err != nil {
 		log.Fatalf("open db: %v", err)
 	}
+
+	fmt.Printf("connected to db at: %v", cfg.Server.DBPath)
 	defer database.Close()
 
 	if err := db.SyncRepos(database, cfg.Repositories); err != nil {
