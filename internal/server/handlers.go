@@ -12,7 +12,7 @@ import (
 )
 
 func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
-	if r.URL.Path != "/" {
+	if r.URL.Path != s.basePath+"/" {
 		http.NotFound(w, r)
 		return
 	}
@@ -28,7 +28,7 @@ func (s *Server) handleIndex(w http.ResponseWriter, r *http.Request) {
 		repo.LatestBuild = latest
 	}
 
-	renderPage(w, "index.html", map[string]any{"Repos": repos})
+	renderPage(w, "index.html", map[string]any{"Repos": repos, "BasePath": s.basePath})
 }
 
 func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
@@ -70,6 +70,7 @@ func (s *Server) handleRefresh(w http.ResponseWriter, r *http.Request) {
 	renderPartial(w, "repo_row.html", map[string]any{
 		"Repo":     repo,
 		"Branches": branches,
+		"BasePath": s.basePath,
 	})
 }
 
@@ -113,7 +114,7 @@ func (s *Server) handleRefreshAll(w http.ResponseWriter, r *http.Request) {
 		repo.LatestBuild = latest
 	}
 
-	renderPartial(w, "repo_list.html", map[string]any{"Repos": repos})
+	renderPartial(w, "repo_list.html", map[string]any{"Repos": repos, "BasePath": s.basePath})
 }
 
 func (s *Server) handleBuild(w http.ResponseWriter, r *http.Request) {
@@ -147,6 +148,7 @@ func (s *Server) handleBuild(w http.ResponseWriter, r *http.Request) {
 	renderPartial(w, "build_log.html", map[string]any{
 		"Build":    build,
 		"RepoName": name,
+		"BasePath": s.basePath,
 	})
 }
 
@@ -167,6 +169,7 @@ func (s *Server) handleBuildStatus(w http.ResponseWriter, r *http.Request) {
 	renderPartial(w, "build_log.html", map[string]any{
 		"Build":    build,
 		"RepoName": r.PathValue("name"),
+		"BasePath": s.basePath,
 	})
 }
 
@@ -202,5 +205,6 @@ func (s *Server) handleBranch(w http.ResponseWriter, r *http.Request) {
 	renderPartial(w, "repo_row.html", map[string]any{
 		"Repo":     repo,
 		"Branches": branches,
+		"BasePath": s.basePath,
 	})
 }

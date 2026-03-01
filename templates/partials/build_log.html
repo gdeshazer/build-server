@@ -3,7 +3,7 @@
 {{$repoName := .RepoName}}
 <div id="build-log-{{$build.ID}}"
   {{if not $build.IsTerminal}}
-  hx-get="/repos/{{$repoName}}/build/{{$build.ID}}"
+  hx-get="{{.BasePath}}/repos/{{$repoName}}/build/{{$build.ID}}"
   hx-trigger="every 2s"
   hx-target="#build-log-{{$build.ID}}"
   hx-swap="outerHTML"

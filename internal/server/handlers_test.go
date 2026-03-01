@@ -86,7 +86,7 @@ func newTestEnv(t *testing.T, repos []config.RepoConfig, gitOps GitOps) *testEnv
 		Server:       config.ServerConfig{Port: 8080, RefreshConcurrency: 4},
 		Repositories: repos,
 	}
-	srv, err := New(cfg, database, makeTestFS())
+	srv, err := New(cfg, database, makeTestFS(), "")
 	if err != nil {
 		t.Fatalf("New: %v", err)
 	}

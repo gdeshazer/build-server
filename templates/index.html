@@ -19,7 +19,7 @@
     </thead>
     <tbody id="repo-table-body">
       {{range .Repos}}
-        {{template "repo_row.html" (dict "Repo" . "Branches" nil)}}
+        {{template "repo_row.html" (dict "Repo" . "Branches" nil "BasePath" $.BasePath)}}
       {{end}}
     </tbody>
   </table>

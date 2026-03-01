@@ -2,6 +2,7 @@ server:
   port: 8800
   db_path: "./build-server.db"
   refresh_concurrency: 4
+  # base_path: /build-server
 
 repositories:
   - name: example-repo

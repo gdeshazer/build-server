@@ -37,9 +37,10 @@ type Server struct {
 	mux      *http.ServeMux
 	staticFS fs.FS
 	gitOps   GitOps
+	basePath string
 }
 
-func New(cfg *config.Config, db *sql.DB, fsys fs.FS) (*Server, error) {
+func New(cfg *config.Config, db *sql.DB, fsys fs.FS, basePath string) (*Server, error) {
 	staticFS, err := fs.Sub(fsys, "static")
 	if err != nil {
 		return nil, fmt.Errorf("static fs: %w", err)
@@ -49,7 +50,7 @@ func New(cfg *config.Config, db *sql.DB, fsys fs.FS) (*Server, error) {
 		return nil, fmt.Errorf("init templates: %w", err)
 	}
 
-	s := &Server{cfg: cfg, db: db, mux: http.NewServeMux(), staticFS: staticFS, gitOps: realGitOps{}}
+	s := &Server{cfg: cfg, db: db, mux: http.NewServeMux(), staticFS: staticFS, gitOps: realGitOps{}, basePath: basePath}
 	s.registerRoutes()
 	return s, nil
 }
@@ -58,13 +59,14 @@ func New(cfg *config.Config, db *sql.DB, fsys fs.FS) (*Server, error) {
 func (s *Server) WithGitOps(g GitOps) { s.gitOps = g }
 
 func (s *Server) registerRoutes() {
-	s.mux.HandleFunc("GET /", s.handleIndex)
-	s.mux.HandleFunc("POST /repos/refresh-all", s.handleRefreshAll)
-	s.mux.HandleFunc("POST /repos/{name}/refresh", s.handleRefresh)
-	s.mux.HandleFunc("POST /repos/{name}/build", s.handleBuild)
-	s.mux.HandleFunc("GET /repos/{name}/build/{id}", s.handleBuildStatus)
-	s.mux.HandleFunc("POST /repos/{name}/branch", s.handleBranch)
-	s.mux.Handle("GET /static/", http.StripPrefix("/static/", http.FileServer(http.FS(s.staticFS))))
+	bp := s.basePath
+	s.mux.HandleFunc("GET "+bp+"/", s.handleIndex)
+	s.mux.HandleFunc("POST "+bp+"/repos/refresh-all", s.handleRefreshAll)
+	s.mux.HandleFunc("POST "+bp+"/repos/{name}/refresh", s.handleRefresh)
+	s.mux.HandleFunc("POST "+bp+"/repos/{name}/build", s.handleBuild)
+	s.mux.HandleFunc("GET "+bp+"/repos/{name}/build/{id}", s.handleBuildStatus)
+	s.mux.HandleFunc("POST "+bp+"/repos/{name}/branch", s.handleBranch)
+	s.mux.Handle("GET "+bp+"/static/", http.StripPrefix(bp+"/static/", http.FileServer(http.FS(s.staticFS))))
 }
 
 func (s *Server) ServeHTTP(w http.ResponseWriter, r *http.Request) {

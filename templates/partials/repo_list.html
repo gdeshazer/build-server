@@ -1,5 +1,5 @@
 {{define "repo_list.html"}}
 {{range .Repos}}
-  {{template "repo_row.html" (dict "Repo" . "Branches" nil)}}
+  {{template "repo_row.html" (dict "Repo" . "Branches" nil "BasePath" $.BasePath)}}
 {{end}}
 {{end}}
